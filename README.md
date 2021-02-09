@@ -1,3 +1,3 @@
-# learning-mode-en-pilotes
+# Learning model
 
 Currently working.
