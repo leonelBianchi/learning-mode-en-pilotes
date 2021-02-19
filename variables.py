@@ -26,8 +26,7 @@ u_prima = np.zeros((n_L+1, int(n_p)+1))
 I = [0]
 
 
-
-# -----------------Función excitación-----------------
+# -----------------Función excitación-----------------------------------------
 
 def p(t):
     global res
@@ -102,7 +101,7 @@ def funcion_2(phi):
         a11 = ai[i-1]+ai[i]+2*E*fii[i]*fi_prima[i]*Delta_t
         a12 = -(bi[i-1]+bi[i])-4*ci[i]*fii[i]*Delta_t
         a13 = -4*ki[i]*fii[i]*Delta_t
-        a21 = -(ai[i-1] + ai[i]) + 2*E*fii[i]*fi_prima[i]*Delta_t
+        a21 = -(ai[i] + ai[i+1]) + 2*E*fii[i]*fi_prima[i]*Delta_t
         a22 = -(bi[i] + bi[i+1])-4*ci[i]*fii[i]*Delta_t
         a23 = a13
         a31 = 0
@@ -158,8 +157,7 @@ def funcion_5(phi):
 
     for j in range(0, int(n_p)+1):
 
-        c = j*Delta_t
-        u_prima[0][j] = -4*(p((c)))/(math.pi*E*(fii[0]**2))
+        u_prima[0][j] = -4*(p((j*Delta_t)))/(math.pi*E*(fii[0]**2))
 
         for i in range(0, n_L+1):
             u[i][j] = 0
@@ -178,6 +176,7 @@ def funcion_6(phi):
     In = funcion_4(phi)
     u_prima, u, up = funcion_5(phi)
     
+    matriz_e = []
     
     for j in range(1, int(n_p)+1):
         for i in np.arange(int((1+((-1)**(j+1)))/2),
@@ -185,19 +184,31 @@ def funcion_6(phi):
                         2):
 
             if i != 0:
-                eA = e((i-1), u[i-1][j-1], u_prima[i-1][j-1], up[i-1][j-1], phi)
+                eA = (2*E*fii[i-1]*fi_prima[i-1]*u_prima[i-1][j-1])-(4*ci[i-1]*fii[i-1]*up[i-1][j-1])-(4*ki[i-1]*fii[i-1]*u[i-1][j-1]) 
+                #eA = e((i), u[i-1][j-1], u_prima[i-1][j-1], up[i-1][j-1], phi)
+                #matriz_e.append(eA)
 
             if i != n_L:
-                eB = e(i+1, u[i+1][j-1], u_prima[i+1][j-1], up[i+1][j-1], phi)
+                eB = (2*E*fii[i+1]*fi_prima[i+1]*u_prima[i+1][j-1])-(4*ci[i+1]*fii[i+1]*up[i+1][j-1])-(4*ki[i+1]*fii[i+1]*u[i+1][j-1]) 
 
+                #eB = e(i, u[i+1][j-1], u_prima[i+1][j-1], up[i+1][j-1], phi)
+                #matriz_e.append(eB)
+                
             if i == 0:
                 q4 = up[1][j-1]-(1/a220)*(a210*(u_prima[0][j]-u_prima[1][j-1])+eB*Delta_t)-((2*E*fii[0]*fi_prima[0]*u_prima[0][j]*Delta_t)/a220)
                 q5 = u[1][j-1]-(Delta_x/2)*(u_prima[0][j]+u_prima[1][j-1])+(Delta_t/2)*up[1][j-1]
                 up[0][j] = I0[0][0]*q4+I0[0][1]*q5
                 u[0][j] = I0[1][0]*q4+I0[1][1]*q5
 
-
-            if i == n_L:
+            elif i != 0 and i != n_L:
+                q1 = (ai[i-1]+ai[i])*u_prima[i-1][j-1]-(bi[i-1]+bi[i])*up[i-1][j-1]-eA*Delta_t
+                q2 = -(ai[i]+ai[i+1])*u_prima[i+1][j-1]-(bi[i]+bi[i+1])*up[i+1][j-1]-eB*Delta_t
+                q3 = ((u[i-1][j-1]+u[i+1][j-1])/2)+(Delta_x/4)*(u_prima[i-1][j-1]-u_prima[i+1][j-1])+(Delta_t/4)*(up[i-1][j-1]+up[i+1][j-1])
+                u_prima[i][j] = I[i][0][0]*q1+I[i][0][1]*q2+I[i][0][2]*q3
+                up[i][j] = I[i][1][0]*q1+I[i][1][1]*q2+I[i][1][2]*q3
+                u[i][j] = I[i][2][0]*q1+I[i][2][1]*q2+I[i][2][2]*q3
+            
+            elif i == n_L:
                 q1 = (ai[i-1]+ai[i])*u_prima[i-1][j-1]-(bi[i-1]+bi[i])*up[i-1][j-1]-eA*Delta_t
                 q2 = 0
                 q3 = u[i-1][j-1]+(Delta_x/2)*u_prima[i-1][j-1]+(Delta_t/2)*up[i-1][j-1]
@@ -205,13 +216,7 @@ def funcion_6(phi):
                 up[i][j] = In[1][0]*q1+In[1][1]*q2+In[1][2]*q3
                 u[i][j] = In[2][0]*q1+In[2][1]*q2+In[2][2]*q3
 
-            if i != 0 and i != n_L:
-                q1 = (ai[i-1]+ai[i])*u_prima[i-1][j-1]-(bi[i-1]+bi[i])*up[i-1][j-1]-eA*Delta_t
-                q2 = -(ai[i]+ai[i+1])*u_prima[i+1][j-1]-(bi[i]+bi[i+1])*up[i+1][j-1]-eB*Delta_t
-                q3 = ((u[i-1][j-1]+u[i+1][j-1])/2)+(Delta_x/4)*(u_prima[i-1][j-1]-u_prima[i+1][j-1])+(Delta_t/4)*(up[i-1][j-1]+up[i+1][j-1])
-                u_prima[i][j] = I[i][0][0]*q1+I[i][0][1]*q2+I[i][0][2]*q3
-                up[i][j] = I[i][1][0]*q1+I[i][1][1]*q2+I[i][1][2]*q3
-                u[i][j] = I[i][2][0]*q1+I[i][2][1]*q2+I[i][2][2]*q3
+            
                 
     return up
 
@@ -220,3 +225,30 @@ def generate_up(vector):
     up = funcion_6(vector)[0]
             
     return up
+
+def plot_up(señal):
+    vec = señal
+    vec.reshape(301,1)
+    up = vec
+    up_modificado = np.zeros((150,1))
+
+    for j in range(0, int(300), 2):
+        up_modificado[int(j/2)] = up[j]
+
+    t = np.arange(0., 150., 1)
+
+
+
+    plt.figure(figsize=(15,5))
+    plt.plot(t,up_modificado , 'r--', c="r", label="$up_{0,j}$")
+    plt.axhline(0, color="black")
+    plt.axvline(0, color="black")
+
+
+    plt.legend( prop={'size': 12})
+    plt.title("Velocity")
+
+
+
+    plt.show()
+
