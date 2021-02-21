@@ -2,6 +2,8 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 
+
+
 Gamma = 2400 # Kg/m^3
 E = 20000000000 # Modulo de elasticidad en Pa
 Vp = math.sqrt(E/Gamma) # Velocidad de ondas de corte s^(-1)*m
@@ -19,11 +21,8 @@ Delta_x = L/n_L # longitud del segmento
 Delta_t = Delta_x/c_sigma
 n_p = 3*(L/c_sigma)*(1/Delta_t)
 
-u = np.zeros((n_L+1, int(n_p)+1))
-up = np.zeros((n_L+1, int(n_p)+1))
-u_prima = np.zeros((n_L+1, int(n_p)+1))
 
-I = [0]
+
 
 
 # -----------------Función excitación-----------------------------------------
@@ -97,6 +96,8 @@ def funcion_2(phi):
     
     xi, fii, ki, ci, ai, bi, fi_prima = funcion_1(phi)
     
+    I = [0]
+    
     for i in range(1, n_L):
         a11 = ai[i-1]+ai[i]+2*E*fii[i]*fi_prima[i]*Delta_t
         a12 = -(bi[i-1]+bi[i])-4*ci[i]*fii[i]*Delta_t
@@ -154,7 +155,11 @@ def e(x, u, u_prima, up, phi):
 def funcion_5(phi):
     
     xi, fii, ki, ci, ai, bi, fi_prima = funcion_1(phi)
-
+    
+    u = np.zeros((n_L+1, int(n_p)+1))
+    up = np.zeros((n_L+1, int(n_p)+1))
+    u_prima = np.zeros((n_L+1, int(n_p)+1))
+    
     for j in range(0, int(n_p)+1):
 
         u_prima[0][j] = -4*(p((j*Delta_t)))/(math.pi*E*(fii[0]**2))
@@ -221,9 +226,9 @@ def funcion_6(phi):
     return up
 
 def generate_up(vector):
-        
+    
     up = funcion_6(vector)[0]
-            
+    
     return up
 
 def plot_up(señal):
@@ -252,3 +257,33 @@ def plot_up(señal):
 
     plt.show()
 
+
+import numpy as np
+import matplotlib.pyplot as plt 
+from scipy.signal import find_peaks    
+    
+def transformada_fourier(up):
+    M = 10  # Potencia de elevacion
+    n = pow(2,M) # Numero de puntos
+    x = np.zeros(n)
+    x[0:301] = up
+
+
+    fhat = np.fft.fft(x,n)                        
+    PSD = fhat * np.conj(fhat)                        
+    freq = ((2*math.pi)/(Delta_t*n))*np.arange(n)              
+    L = np.arange(1, np.floor(n/2), dtype='int')      
+
+
+    x = PSD[L][:250]
+    peaks, _ = find_peaks(x, distance=20)
+    peaks2, _ = find_peaks(x, prominence=20)      
+    peaks3, _ = find_peaks(x, width=20)
+    peaks4, _ = find_peaks(x, threshold=0.4)    
+
+    plt.plot(peaks2, x[peaks2], "ob"); plt.plot(x); plt.legend(['picos'])
+    plt.xlim(0, 250)
+
+    plt.show()
+    
+    return peaks2, PSD[L]
